@@ -5,8 +5,9 @@
 
 from pygame import *
 import sys
-from os.path import abspath, dirname
+from os.path import abspath, dirname, join
 from random import choice
+import neat
 
 BASE_PATH = abspath(dirname(__file__))
 FONT_PATH = BASE_PATH + '/fonts/'
@@ -352,6 +353,11 @@ class SpaceInvaders(object):
         self.life3 = Life(769, 3)
         self.livesGroup = sprite.Group(self.life1, self.life2, self.life3)
 
+        #neat configs
+        self.gen = 0
+        self.neatConfigPath = join(BASE_PATH + '/neatConfig.txt')
+
+
     def reset(self, score):
         self.player = Ship()
         self.playerGroup = sprite.Group(self.player)
@@ -598,7 +604,20 @@ class SpaceInvaders(object):
             display.update()
             self.clock.tick(60)
 
+    def setupNeat(self):
+        max_gen = 150
+        config = neat.config.Config(neat.DefaultGenome,
+                                    neat.DefaultReproduction, neat.DefaultSpeciesSet,
+                                    neat.DefaultStagnation, self.neatConfigPath)
+
+        p = neat.Population(config)
+
+        # Stats
+        stats = neat.StatisticsReporter()
+        p.add_reporter(neat.StdOutReporter(True))
+        p.add_reporter(stats)
 
 if __name__ == '__main__':
     game = SpaceInvaders()
+    game.setupNeat()
     game.main()
