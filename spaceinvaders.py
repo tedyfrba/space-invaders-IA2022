@@ -52,11 +52,13 @@ class Ship(pygame.sprite.Sprite):
         self.game.screen.blit(self.image, self.rect)
 
     def moveLeft(self):
-        self.rect.x -= self.speed
+        if self.rect.x > 10:
+            self.rect.x -= self.speed
         self.game.screen.blit(self.image, self.rect)
 
     def moveRight(self):
-        self.rect.x += self.speed
+        if self.rect.x < 740:
+            self.rect.x += self.speed
         self.game.screen.blit(self.image, self.rect)
 
 
@@ -285,16 +287,17 @@ class EnemyExplosion(pygame.sprite.Sprite):
 
 
 class MysteryExplosion(pygame.sprite.Sprite):
-    def __init__(self, mystery, score, *groups):
+    def __init__(self, game, mystery, score, *groups):
         super(MysteryExplosion, self).__init__(*groups)
         self.text = Text(FONT, 20, str(score), WHITE,
                          mystery.rect.x + 20, mystery.rect.y + 6)
         self.timer = pygame.time.get_ticks()
+        self.game = game
 
     def update(self, current_time, *args):
         passed = current_time - self.timer
         if passed <= 200 or 400 < passed <= 600:
-            self.text.draw(game.screen)
+            self.text.draw(self.game.screen)
         elif 600 < passed:
             self.kill()
 
@@ -413,23 +416,26 @@ class SpaceInvaders(object):
                 sys.exit()
             if e.type == pygame.KEYDOWN:
                 if e.key == pygame.K_SPACE:
-                    if len(self.bullets) == 0 and self.shipAlive:
-                        if self.score < 1000:
-                            bullet = Bullet(self, self.player.rect.x + 23,
-                                            self.player.rect.y + 5, -1,
-                                            15, 'laser', 'center')
-                            self.bullets.add(bullet)
-                            self.allSprites.add(self.bullets)
-                        else:
-                            leftbullet = Bullet(self, self.player.rect.x + 8,
-                                                self.player.rect.y + 5, -1,
-                                                15, 'laser', 'left')
-                            rightbullet = Bullet(self, self.player.rect.x + 38,
-                                                 self.player.rect.y + 5, -1,
-                                                 15, 'laser', 'right')
-                            self.bullets.add(leftbullet)
-                            self.bullets.add(rightbullet)
-                            self.allSprites.add(self.bullets)
+                    self.make_shot()
+
+    def make_shot(self):
+        if len(self.bullets) == 0 and self.shipAlive:
+            if self.score < 1000:
+                bullet = Bullet(self, self.player.rect.x + 23,
+                                self.player.rect.y + 5, -1,
+                                15, 'laser', 'center')
+                self.bullets.add(bullet)
+                self.allSprites.add(self.bullets)
+            else:
+                leftbullet = Bullet(self, self.player.rect.x + 8,
+                                    self.player.rect.y + 5, -1,
+                                    15, 'laser', 'left')
+                rightbullet = Bullet(self, self.player.rect.x + 38,
+                                     self.player.rect.y + 5, -1,
+                                     15, 'laser', 'right')
+                self.bullets.add(leftbullet)
+                self.bullets.add(rightbullet)
+                self.allSprites.add(self.bullets)
 
     def make_enemies(self):
         enemies = EnemiesGroup(self, 10, 5)
@@ -492,7 +498,7 @@ class SpaceInvaders(object):
                                            True, True).keys():
             score = self.calculate_score(mystery.row)
             ++self.hits
-            MysteryExplosion(mystery, score, self.explosionsGroup)
+            MysteryExplosion(self, mystery, score, self.explosionsGroup)
             newShip = Mystery(self)
             self.allSprites.add(newShip)
             self.mysteryGroup.add(newShip)

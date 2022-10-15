@@ -47,7 +47,7 @@ class PlayGame:
             self.game.draw(draw_score=True)
             pygame.display.update()
 
-    def train_ai(self, genome, config, draw=False):
+    def train_ai(self, genome, config):
         """
         Train the AI by passing two NEAT neural networks and the NEAt config object.
         These AI's will play to determine their fitness.
@@ -66,6 +66,8 @@ class PlayGame:
             while shipAlive:
                 game_info = self.game.run_game()
 
+                # shooting all the time
+                self.game.make_shot()
                 self.move_ai_ship(net)
 
             # if draw:
@@ -96,20 +98,21 @@ class PlayGame:
         """
         decision = 0
         for (bullet) in self.enemyBullets:
-            print(self.ship.rect)
-            print(bullet.rect)
-            print(abs(self.ship.rect.x - bullet.rect.x))
-            # output = net.activate(
-            #     (self.ship.rect.x, abs(self.ship.rect.x - bullet.rect.x), bullet.rect.y))
-            # decision = output.index(max(output))
+            # print(self.ship.rect)
+            # print(bullet.rect)
+            # print(abs(self.ship.rect.x - bullet.rect.x))
+            output = net.activate(
+                (self.ship.rect.x, abs(self.ship.rect.x - bullet.rect.x), bullet.rect.y))
+            decision = output.index(max(output))
 
+        # print(decision)
         valid = True
         if decision == 0:  # Don't move
             self.genome.fitness -= 0.01  # we want to discourage this
-        elif decision == 1:  # Move left
-            valid = self.game.ship.moveLeft()
-        else:  # Move right
-            valid = self.game.ship.moveRight()
+        elif decision == 1 and self.ship.rect.x > 10:  # Move left
+            valid = self.ship.moveLeft()
+        elif self.ship.rect.x < 740:  # Move right
+            valid = self.ship.moveRight()
 
         if not valid:  # If the movement makes the paddle go off the screen punish the AI
             self.genome.fitness -= 1
@@ -117,14 +120,12 @@ class PlayGame:
 
 def eval_genomes(genomes, config):
 
-    # for i, (genome_id1, genome) in enumerate(genomes):
-    #     print(round(i/len(genomes) * 100), end=" ")
     for i, (genome_id, genome) in enumerate(genomes):
         genome.fitness = 0
 
         game = PlayGame(genome)
 
-        force_quit = game.train_ai(genome, config, draw=True)
+        force_quit = game.train_ai(genome, config)
         if force_quit:
             quit()
 
@@ -136,7 +137,7 @@ def run_neat(config):
     p.add_reporter(stats)
     p.add_reporter(neat.Checkpointer(1))
 
-    winner = p.run(eval_genomes)
+    winner = p.run(eval_genomes, 20)
     with open("best.pickle", "wb") as f:
         pickle.dump(winner, f)
 
