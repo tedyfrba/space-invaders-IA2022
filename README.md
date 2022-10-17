@@ -41,3 +41,18 @@ pip install numpy
 pip install scipy
 pip install sklearn
 python space_driver.py
+
+
+## Runs
+In the run02 perform bether but die more times, 
+remove the score for the input
+
+Configs
+Generations 5
+Net
+num_hidden              = 4
+num_inputs              = 3
+num_outputs             = 3
+fitness_criterion     = mean
+fitness_threshold     = 200
+pop_size              = 5

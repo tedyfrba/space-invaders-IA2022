@@ -59,7 +59,7 @@ class PlayGame:
         while True:
             self.game.setup_game()
 
-            while self.game.shipAlive and self.game.score < 100:
+            while self.game.shipAlive and self.game.score < 1500:
                 game_info = self.game.run_game()
 
                 # shooting all the time
@@ -78,7 +78,11 @@ class PlayGame:
             accum_score += self.game.score
             # print(accum_score)
 
-            if accum_score >= 1000:
+            if not self.game.shipAlive: # If die punish the AI
+                self.genome.fitness -= 40
+
+
+            if accum_score >= 10000:
                 self.calculate_fitness(duration)
                 break
 
@@ -98,8 +102,8 @@ class PlayGame:
         for (bullet) in self.game.enemyBullets:
             # print(bullet)
             output = net.activate(
-                (self.game.player.rect.x, abs(self.game.player.rect.x - bullet.rect.x), abs(self.game.player.rect.y - bullet.rect.y), self.game.score))
-                # (self.game.player.rect.x, (self.game.player.rect.x - bullet.rect.x), (self.game.player.rect.y - bullet.rect.y), bullet.rect.y))
+                # (self.game.player.rect.x, abs(self.game.player.rect.x - bullet.rect.x), abs(self.game.player.rect.y - bullet.rect.y), self.game.score))
+                (self.game.player.rect.x, (self.game.player.rect.x - bullet.rect.x), (self.game.player.rect.y - bullet.rect.y)))
             decision = output.index(max(output))
             # decision = sum(output)/(len(output)*100*max(output))
 
@@ -116,7 +120,7 @@ class PlayGame:
         # valid = random.choice([self.game.player.moveLeft(), self.game.player.moveRight()])
 
         if not valid:  # If the movement makes the paddle go off the screen punish the AI
-            self.genome.fitness -= 1
+            self.genome.fitness -= 40
 
 
 def eval_genomes(genomes, config):
@@ -138,7 +142,7 @@ def run_neat(config):
     p.add_reporter(stats)
     p.add_reporter(neat.Checkpointer(1))
 
-    winner = p.run(eval_genomes, 2)
+    winner = p.run(eval_genomes, 5)
 
     # Display the winning genome.
     print('\nBest genome:\n{!s}'.format(winner))
