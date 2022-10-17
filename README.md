@@ -25,6 +25,7 @@ gradually destroyed by projectiles from the aliens and player.
 
 ```bash
 python spaceinvaders.py
+python main.py >> ./runs/run01.log
 ```
 
 **Note:** If you're using Python 3, replace the command "python" with "python3"

@@ -54,12 +54,18 @@ class Ship(pygame.sprite.Sprite):
     def moveLeft(self):
         if self.rect.x > 10:
             self.rect.x -= self.speed
-        self.game.screen.blit(self.image, self.rect)
+            self.game.screen.blit(self.image, self.rect)
+            return True
+        else:
+            return False
 
     def moveRight(self):
         if self.rect.x < 740:
             self.rect.x += self.speed
-        self.game.screen.blit(self.image, self.rect)
+            self.game.screen.blit(self.image, self.rect)
+            return True
+        else:
+            return False
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -390,7 +396,6 @@ class SpaceInvaders(object):
         self.noteTimer = pygame.time.get_ticks()
         self.shipTimer = pygame.time.get_ticks()
         self.score = score
-        self.hits = 0
         self.makeNewShip = False
         self.shipAlive = True
 
@@ -490,14 +495,12 @@ class SpaceInvaders(object):
         for enemy in pygame.sprite.groupcollide(self.enemies, self.bullets,
                                          True, True).keys():
             self.calculate_score(enemy.row)
-            ++self.hits
             EnemyExplosion(self, enemy, self.explosionsGroup)
             self.gameTimer = pygame.time.get_ticks()
 
         for mystery in pygame.sprite.groupcollide(self.mysteryGroup, self.bullets,
                                            True, True).keys():
             score = self.calculate_score(mystery.row)
-            ++self.hits
             MysteryExplosion(self, mystery, score, self.explosionsGroup)
             newShip = Mystery(self)
             self.allSprites.add(newShip)
@@ -627,7 +630,7 @@ class SpaceInvaders(object):
                 self.enemyPosition += ENEMY_MOVE_DOWN
                 self.reset(self.score)
                 self.gameTimer += 3000
-        else:
+        else: # a new stage
             currentTime = pygame.time.get_ticks()
             self.screen.blit(self.background, (0, 0))
             self.allBlockers.update(self.screen)
@@ -644,16 +647,15 @@ class SpaceInvaders(object):
             self.create_new_ship(self.makeNewShip, currentTime)
             self.make_enemies_shoot()
 
-        game_info = GameInfo(self.shipAlive, self.score, self.hits)
+        game_info = GameInfo(self.shipAlive, self.score)
 
         return game_info
 
 
 class GameInfo:
-    def __init__(self, shipAlive, score, hits):
+    def __init__(self, shipAlive, score):
         self.shipAlive = shipAlive
         self.score = score
-        self.hits = hits
 
 if __name__ == '__main__':
     gm = SpaceInvaders(0)

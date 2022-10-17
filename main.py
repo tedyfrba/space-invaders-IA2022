@@ -4,15 +4,14 @@ import pygame
 import neat
 import os
 import time
-import pickle
+import random
+# import pickle
 
 
 class PlayGame:
     def __init__(self, genome):
         self.genome = genome
         self.game = SpaceInvaders(0)
-        self.ship = None
-        self.enemyBullets = None
 
     def test_ai(self, net):
         """
@@ -52,43 +51,42 @@ class PlayGame:
         Train the AI by passing two NEAT neural networks and the NEAt config object.
         These AI's will play to determine their fitness.
         """
-        run = True
         start_time = time.time()
 
         net = neat.nn.FeedForwardNetwork.create(genome, config)
 
-        self.game.setup_game()
-        self.ship = self.game.player
-        self.enemyBullets = self.game.enemyBullets
+        accum_score = 0
+        while True:
+            self.game.setup_game()
 
-        while run:
-            shipAlive = True
-            while shipAlive:
+            while self.game.shipAlive and self.game.score < 100:
                 game_info = self.game.run_game()
 
                 # shooting all the time
-                self.game.make_shot()
+                # pygame.time.set_timer(pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE)), random.randint(0, 9) * 100000000)
+
                 self.move_ai_ship(net)
 
-            # if draw:
-            #     self.game.draw(draw_score=False, draw_hits=True)
+                # if draw:
+                #     self.game.draw(draw_score=False, draw_hits=True)
 
                 pygame.display.update()
-            # self.game.clock.tick(self.game.clockTick)
+                # self.game.clock.tick(self.game.clockTick)
 
                 duration = time.time() - start_time
 
-                # if game_info.score == 1 or game_info.shipAlive:
-                if game_info.shipAlive:
-                    self.calculate_fitness(game_info, duration)
-                    break
+            accum_score += self.game.score
+            # print(accum_score)
 
-                shipAlive = game_info.shipAlive
+            if accum_score >= 1000:
+                self.calculate_fitness(duration)
+                break
 
         return False
 
-    def calculate_fitness(self, game_info, duration):
-        self.genome.fitness += game_info.hits + duration
+    def calculate_fitness(self,  duration):
+        self.genome.fitness += self.game.score + duration
+        print(self.genome.fitness)
 
 
     def move_ai_ship(self, net):
@@ -97,22 +95,25 @@ class PlayGame:
         neural networks that control them and avoid the Bullets.
         """
         decision = 0
-        for (bullet) in self.enemyBullets:
-            # print(self.ship.rect)
-            # print(bullet.rect)
-            # print(abs(self.ship.rect.x - bullet.rect.x))
+        for (bullet) in self.game.enemyBullets:
+            # print(bullet)
             output = net.activate(
-                (self.ship.rect.x, abs(self.ship.rect.x - bullet.rect.x), bullet.rect.y))
+                (self.game.player.rect.x, abs(self.game.player.rect.x - bullet.rect.x), abs(self.game.player.rect.y - bullet.rect.y), self.game.score))
+                # (self.game.player.rect.x, (self.game.player.rect.x - bullet.rect.x), (self.game.player.rect.y - bullet.rect.y), bullet.rect.y))
             decision = output.index(max(output))
+            # decision = sum(output)/(len(output)*100*max(output))
 
-        # print(decision)
         valid = True
         if decision == 0:  # Don't move
-            self.genome.fitness -= 0.01  # we want to discourage this
-        elif decision == 1 and self.ship.rect.x > 10:  # Move left
-            valid = self.ship.moveLeft()
-        elif self.ship.rect.x < 740:  # Move right
-            valid = self.ship.moveRight()
+            # pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE))
+            pygame.time.set_timer(pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE)),
+                                  random.randint(0, 9) * 100000000)
+            # self.genome.fitness -= 0.01  # we want to discourage this
+        elif decision == 1:  # Move left
+            valid = self.game.player.moveLeft()
+        else:  # Move right
+            valid = self.game.player.moveRight()
+        # valid = random.choice([self.game.player.moveLeft(), self.game.player.moveRight()])
 
         if not valid:  # If the movement makes the paddle go off the screen punish the AI
             self.genome.fitness -= 1
@@ -137,19 +138,22 @@ def run_neat(config):
     p.add_reporter(stats)
     p.add_reporter(neat.Checkpointer(1))
 
-    winner = p.run(eval_genomes, 20)
-    with open("best.pickle", "wb") as f:
-        pickle.dump(winner, f)
+    winner = p.run(eval_genomes, 2)
+
+    # Display the winning genome.
+    print('\nBest genome:\n{!s}'.format(winner))
+    # with open("best.pickle", "wb") as f:
+    #     pickle.dump(winner, f)
 
 
-def test_best_network(config):
-    with open("best.pickle", "rb") as f:
-        winner = pickle.load(f)
-    winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-
-    spcinvdrs = PlayGame()
-    pygame.display.set_caption("SpcInvdrs")
-    spcinvdrs.test_ai(winner_net)
+# def test_best_network(config):
+#     with open("best.pickle", "rb") as f:
+#         winner = pickle.load(f)
+#     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
+#
+#     spcinvdrs = PlayGame()
+#     pygame.display.set_caption("SpcInvdrs")
+#     spcinvdrs.test_ai(winner_net)
 
 
 if __name__ == '__main__':
